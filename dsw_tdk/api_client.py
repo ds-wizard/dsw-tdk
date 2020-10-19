@@ -76,7 +76,7 @@ class DSWAPIClient:
     def __init__(self, api_url: str, session=None):
         self.api_url = api_url
         self.token = None
-        self.session = session or aiohttp.ClientSession()
+        self.session = session or aiohttp.ClientSession(connector=aiohttp.TCPConnector(verify_ssl=False))
 
     async def close(self):
         await self.session.close()
