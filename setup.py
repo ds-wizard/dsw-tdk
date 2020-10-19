@@ -1,16 +1,16 @@
 from setuptools import setup, find_packages
 import os
 
-from dsw_tdk import __app__, __version__
+from dsw_tdk.consts import APP, VERSION
 
 this_directory = os.path.abspath(os.path.dirname(__file__))
 with open(os.path.join(this_directory, 'README.md'), encoding='utf-8') as f:
     long_description = ''.join(f.readlines())
 
 setup(
-    name=__app__,
-    version=__version__,
-    keywords='dsw template toolkit',
+    name=APP,
+    version=VERSION,
+    keywords='dsw template toolkit jinja documents',
     description='Data Stewardship Wizard Template Development Toolkit',
     long_description=long_description,
     long_description_content_type='text/markdown',
