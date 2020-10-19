@@ -27,6 +27,7 @@ setup(
         'colorama',
         'humanize',
         'Jinja2',
+        'pathspec',
         'python-dotenv',
         'python-slugify',
         'watchgod',

@@ -262,6 +262,10 @@ def get_template(ctx, api_server, template_id, template_dir, username, password,
         except Exception as e:
             ClickPrinter.failure(f'Could not store template locally')
             ClickPrinter.error(f'> {e}')
+            try:
+                await tdk.client.close()
+            except:
+                pass
             exit(1)
 
     loop = asyncio.get_event_loop()
@@ -302,12 +306,15 @@ def put_template(ctx, api_server, template_dir, username, password, force, watch
                     if len(changes) > 0:
                         await tdk.process_changes(changes, force=force)
                 await tdk.watch_project(watch_callback)
+            await tdk.client.close()
         except DSWCommunicationError as e:
             ClickPrinter.failure(f'Could not upload template')
             ClickPrinter.error(f'> {e.reason}\n> {e.message}')
+            try:
+                await tdk.client.close()
+            except:
+                pass
             exit(1)
-        finally:
-            await tdk.client.close()
 
     loop = asyncio.get_event_loop()
     loop.run_until_complete(main_routine())
@@ -357,6 +364,10 @@ def list_templates(ctx, api_server, username, password, output_format):
         except DSWCommunicationError as e:
             ClickPrinter.failure('Failed to get list of templates')
             ClickPrinter.error(f'> {e.reason}\n> {e.message}')
+            try:
+                await tdk.client.close()
+            except:
+                pass
             exit(1)
         await tdk.client.close()
 
