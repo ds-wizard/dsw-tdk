@@ -4,7 +4,6 @@ attrs==19.3.0
 chardet==3.0.4
 click==7.1.2
 colorama==0.4.3
--e git+git@github.com:ds-wizard/dsw-tdk.git@de6d48b354276902a735525ca2448f832100a93f#egg=dsw_tdk
 humanize==3.0.1
 idna==2.10
 Jinja2==2.11.2
