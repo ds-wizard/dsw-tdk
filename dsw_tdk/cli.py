@@ -194,7 +194,7 @@ def interact_builder(builder: TemplateBuilder):
 
 @click.group(cls=AliasedGroup)
 @click.option('--dot-env', default='.env', required=False, show_default=True,
-              type=click.Path(file_okay=True, exists=True, dir_okay=False),
+              type=click.Path(file_okay=True, dir_okay=False),
               help='Provide file with environment variables.')
 @click.option('-q', '--quiet', is_flag=True,
               help='Hide additional information logs.')
@@ -203,7 +203,8 @@ def interact_builder(builder: TemplateBuilder):
 @click.version_option(version=VERSION)
 @click.pass_context
 def main(ctx, quiet, debug, dot_env):
-    dotenv.load_dotenv(stream=dot_env)
+    if pathlib.Path(dot_env).exists():
+        dotenv.load_dotenv(stream=dot_env)
     ctx.ensure_object(CLIContext)
     if quiet:
         ctx.obj.quiet_mode()
