@@ -204,7 +204,7 @@ def interact_builder(builder: TemplateBuilder):
 @click.pass_context
 def main(ctx, quiet, debug, dot_env):
     if pathlib.Path(dot_env).exists():
-        dotenv.load_dotenv(stream=dot_env)
+        dotenv.load_dotenv(dotenv_path=dot_env)
     ctx.ensure_object(CLIContext)
     if quiet:
         ctx.obj.quiet_mode()
@@ -238,7 +238,8 @@ def new_template(ctx, template_dir, force):
 @main.command(help='Download template from DSW.', name='get')
 @click.argument('TEMPLATE-ID')
 @click.argument('TEMPLATE-DIR', type=DIR_TYPE, default=CURRENT_DIR, required=False)
-@click.option('-s', '--api-server', metavar='API-URL', envvar='DSW_API')
+@click.option('-s', '--api-server', metavar='API-URL', envvar='DSW_API', prompt=True,
+              help='URL of DSW server API.')
 @click.option('-u', '--username', envvar='DSW_USERNAME', prompt=True, hide_input=False,
               metavar='EMAIL', help='Admin username (email) for DSW instance.')
 @click.option('-p', '--password', envvar='DSW_PASSWORD', prompt=True, hide_input=True,
@@ -275,7 +276,8 @@ def get_template(ctx, api_server, template_id, template_dir, username, password,
 
 @main.command(help='Upload template to DSW.', name='put')
 @click.argument('TEMPLATE-DIR', type=DIR_TYPE, default=CURRENT_DIR, required=False)
-@click.option('-s', '--api-server', metavar='API-URL', envvar='DSW_API')
+@click.option('-s', '--api-server', metavar='API-URL', envvar='DSW_API', prompt=True,
+              help='URL of DSW server API.')
 @click.option('-u', '--username', envvar='DSW_USERNAME', prompt=True, hide_input=False,
               metavar='EMAIL', help='Admin username (email) for DSW instance.')
 @click.option('-p', '--password', envvar='DSW_PASSWORD', prompt=True, hide_input=True,
@@ -346,7 +348,8 @@ def create_package(ctx, template_dir, output, force):
 
 
 @main.command(help='List templates from DSW via API.', name='list')
-@click.option('-s', '--api-server', metavar='API-URL', envvar='DSW_API')
+@click.option('-s', '--api-server', metavar='API-URL', envvar='DSW_API', prompt=True,
+              help='URL of DSW server API.')
 @click.option('-u', '--username', envvar='DSW_USERNAME', prompt=True, hide_input=False,
               metavar='EMAIL', help='Admin username (email) for DSW instance.')
 @click.option('-p', '--password', envvar='DSW_PASSWORD', prompt=True, hide_input=True,
