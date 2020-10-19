@@ -203,7 +203,7 @@ class TDKCore:
             template_exists = await self.client.check_template_exists(template_id=self.project.template.id)
             if template_exists:
                 self.logger.info(f'Updating existing remote template {self.project.template.id}')
-                await self.client.put_template(template=self.template)
+                await self.client.put_template(template=self.project.template)
             else:
                 # TODO: optimization - reload full template and send it, skip all other changes
                 self.logger.info(f'Template {self.project.template.id} does not exist on remote - full sync')
@@ -250,6 +250,7 @@ class TDKCore:
                 self.logger.debug(f'Reloading {TemplateProject.TEMPLATE_FILE} file')
                 previous_id = self.project.template.id
                 self.project.load_descriptor()
+                self.project.load_readme()
                 new_id = self.project.template.id
                 if new_id != previous_id:
                     self.logger.warning(f'Template ID changed from {previous_id} to {new_id}')
