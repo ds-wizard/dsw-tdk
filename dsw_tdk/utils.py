@@ -1,8 +1,5 @@
 import jinja2
-import json
-import os
 import pathlib
-import pathspec
 import uuid
 
 from typing import List
@@ -157,10 +154,10 @@ class TemplateBuilder:
         TemplateValidator.validate(self.template)
         for format_spec in self._formats:
             content = j2_env.get_template('starter.j2').render(template=self.template)
-            self.template.files.append(
-                TemplateFile(filename=format_spec.filename,
-                             content_type='text/plain',
-                             content=content.encode(encoding=DEFAULT_ENCODING))
+            self.template.files[format_spec.filename] = TemplateFile(
+                filename=format_spec.filename,
+                content_type='text/plain',
+                content=content.encode(encoding=DEFAULT_ENCODING)
             )
             self.template.tdk_config.files.append(str(format_spec.filename))
         self.template.allowed_packages.append(PackageFilter())
