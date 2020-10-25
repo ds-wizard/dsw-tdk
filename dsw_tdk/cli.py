@@ -2,12 +2,14 @@ import asyncio
 import click
 import datetime
 import dotenv
-import humanize
+import humanize  # type: ignore
 import logging
 import mimetypes
 import pathlib
 import slugify
-import watchgod
+import watchgod  # type: ignore
+
+from typing import Dict
 
 from dsw_tdk.api_client import DSWCommunicationError
 from dsw_tdk.core import TDKCore
@@ -70,10 +72,10 @@ def print_template_info(template: Template):
     click.echo(f'Name:        {template.name}')
     click.echo(f'License:     {template.license}')
     click.echo(f'Description: {template.description}')
-    click.echo(f'Formats:')
+    click.echo('Formats:')
     for format_spec in template.formats:
         click.echo(f' - {format_spec.name}')
-    click.echo(f'Files:')
+    click.echo('Files:')
     for tfile in template.files.values():
         filesize = humanize.naturalsize(len(tfile.content))
         click.echo(f' - {tfile.filename.as_posix()} [{filesize}]')
@@ -170,7 +172,7 @@ def interact_builder(builder: TemplateBuilder):
     prompt_fill('License', obj=builder, attr='license', default='CC0')
     click.echo('=' * 60)
     add_format = click.confirm('Do you want to add a format?', default=True)
-    formats = dict()
+    formats = dict()  # type: Dict[str, FormatSpec]
     while add_format:
         format_spec = FormatSpec()
         prompt_fill('Format name', obj=format_spec, attr='name', default='HTML')
@@ -220,7 +222,7 @@ def new_template(ctx, template_dir, force):
     builder = TemplateBuilder()
     try:
         interact_builder(builder)
-    except:
+    except Exception:
         click.echo('')
         ClickPrinter.failure('Exited...')
         exit(1)
@@ -230,7 +232,7 @@ def new_template(ctx, template_dir, force):
         tdk.store_local(force=force)
         ClickPrinter.success(f'Template project created: {template_dir}')
     except Exception as e:
-        ClickPrinter.failure(f'Could not create new template project')
+        ClickPrinter.failure('Could not create new template project')
         ClickPrinter.error(f'> {e}')
         exit(1)
 
@@ -254,7 +256,7 @@ def get_template(ctx, api_server, template_id, template_dir, username, password,
             await tdk.load_remote(template_id=template_id)
             await tdk.client.close()
         except DSWCommunicationError as e:
-            ClickPrinter.error(f'Could not get template:', bold=True)
+            ClickPrinter.error('Could not get template:', bold=True)
             ClickPrinter.error(f'> {e.reason}\n> {e.message}')
             exit(1)
         tdk.prepare_local(template_dir=template_dir)
@@ -262,11 +264,11 @@ def get_template(ctx, api_server, template_id, template_dir, username, password,
             tdk.store_local(force=force)
             ClickPrinter.success(f'Template {template_id} downloaded to {template_dir}')
         except Exception as e:
-            ClickPrinter.failure(f'Could not store template locally')
+            ClickPrinter.failure('Could not store template locally')
             ClickPrinter.error(f'> {e}')
             try:
                 await tdk.client.close()
-            except:
+            except Exception:
                 pass
             exit(1)
 
@@ -287,11 +289,12 @@ def get_template(ctx, api_server, template_id, template_dir, username, password,
 @click.pass_context
 def put_template(ctx, api_server, template_dir, username, password, force, watch):
     async def main_routine():
+        # TODO: split
         tdk = TDKCore(logger=ctx.obj.logger)
         try:
             tdk.load_local(template_dir=template_dir)
         except Exception as e:
-            ClickPrinter.failure(f'Could not load local template')
+            ClickPrinter.failure('Could not load local template')
             ClickPrinter.error(f'> {e}')
             exit(1)
         try:
@@ -311,11 +314,11 @@ def put_template(ctx, api_server, template_dir, username, password, force, watch
                 await tdk.watch_project(watch_callback)
             await tdk.client.close()
         except DSWCommunicationError as e:
-            ClickPrinter.failure(f'Could not upload template')
+            ClickPrinter.failure('Could not upload template')
             ClickPrinter.error(f'> {e.reason}\n> {e.message}')
             try:
                 await tdk.client.close()
-            except:
+            except Exception:
                 pass
             exit(1)
 
@@ -370,7 +373,7 @@ def list_templates(ctx, api_server, username, password, output_format):
             ClickPrinter.error(f'> {e.reason}\n> {e.message}')
             try:
                 await tdk.client.close()
-            except:
+            except Exception:
                 pass
             exit(1)
         await tdk.client.close()

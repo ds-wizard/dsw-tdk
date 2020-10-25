@@ -7,8 +7,7 @@ from dsw_tdk.consts import REGEX_SEMVER, REGEX_ORGANIZATION_ID, \
 from dsw_tdk.model import PackageFilter, Format, Step
 
 
-class ValidationError:
-    
+class ValidationError(BaseException):
     def __init__(self, field_name: str, message: str):
         self.field_name = field_name
         self.message = message
@@ -92,9 +91,9 @@ def _validate_jinja_options(field_name: str, value: Dict[str, str]) -> List[Vali
         return res
     for k in ('template', 'content-type', 'extension'):
         if k not in value.keys():
-            res.append(ValidationError(field_name, f'Jinja option cannot be left out'))
+            res.append(ValidationError(field_name, 'Jinja option cannot be left out'))
         elif value[k] is None or not isinstance(value[k], str) or len(value[k]) == 0:
-            res.append(ValidationError(field_name, f'Jinja option cannot be empty'))
+            res.append(ValidationError(field_name, 'Jinja option cannot be empty'))
     if 'content-type' in value.keys():
         res.extend(_validate_content_type(f'{field_name}.content-type', value['content-type']))
     return res
@@ -186,7 +185,7 @@ def _validate_formats(field_name: str, value: List[Format]) -> List[ValidationEr
     uuids = set()
     for v in value:
         if v.uuid in uuids:
-            res.append(f'[{field_name}]: Duplicate format UUID {v.uuid}')
+            res.append(ValidationError(field_name, f'Duplicate format UUID {v.uuid}'))
         uuids.add(v.uuid)
         res.extend(FormatValidator.collect_errors(v, field_name_prefix=f'{field_name}.'))
     return res

@@ -3,7 +3,7 @@ import json
 import logging
 import mimetypes
 import pathlib
-import pathspec
+import pathspec  # type: ignore
 
 from collections import OrderedDict
 from typing import List, Dict, Optional, Tuple, Any
@@ -272,6 +272,12 @@ class TemplateProject:
         self.used_readme = None  # type: Optional[pathlib.Path]
         self.logger = logger  # type: logging.Logger
 
+    @property
+    def safe_template(self) -> Template:
+        if self.template is None:
+            raise RuntimeError('Template is not loaded')
+        return self.template
+
     def load_descriptor(self):
         if not self.descriptor_path.is_file():
             raise RuntimeError(f'Template file does not exist: {self.descriptor_path.as_posix()}')
@@ -282,13 +288,13 @@ class TemplateProject:
             raise RuntimeError(f'Unable to load template using {self.descriptor_path}.')
 
     def load_readme(self):
-        readme = self.template.tdk_config.readme_file
+        readme = self.safe_template.tdk_config.readme_file
         if readme is not None:
             try:
                 self.used_readme = self.template_dir / readme
-                self.template.readme = self.used_readme.read_text(encoding=DEFAULT_ENCODING)
-            except:
-                raise RuntimeWarning(f'README file "{readme}" cannot be loaded')
+                self.safe_template.readme = self.used_readme.read_text(encoding=DEFAULT_ENCODING)
+            except Exception as e:
+                raise RuntimeWarning(f'README file "{readme}" cannot be loaded: {e}')
 
     def load_file(self, filepath: pathlib.Path) -> TemplateFile:
         try:
@@ -297,26 +303,28 @@ class TemplateProject:
             tfile = TemplateFile(filename=filepath)
             with open(self.template_dir / filepath, mode='rb') as f:
                 tfile.content = f.read()
-            self.template.files[filepath.as_posix()] = tfile
+            self.safe_template.files[filepath.as_posix()] = tfile
             return tfile
         except Exception as e:
             raise RuntimeWarning(f'Failed to load template file {filepath}: {e}')
 
     def load_files(self):
-        self.template.files.clear()
+        self.safe_template.files.clear()
         for f in self.list_files():
             self.load_file(f)
 
     @property
     def files_pathspec(self) -> pathspec.PathSpec:
         # TODO: make this more efficient (reload only when tdk_config changes, otherwise cache)
-        patterns = self.template.tdk_config.files + self.DEFAULT_PATTERNS
+        patterns = self.safe_template.tdk_config.files + self.DEFAULT_PATTERNS
         return pathspec.PathSpec.from_lines(PATHSPEC_FACTORY, patterns)
 
     def list_files(self) -> List[pathlib.Path]:
         return list(pathlib.Path(p) for p in self.files_pathspec.match_tree_files(self.template_dir))
 
-    def _relative_paths_eq(self, filepath1: pathlib.Path, filepath2: pathlib.Path) -> bool:
+    def _relative_paths_eq(self, filepath1: Optional[pathlib.Path], filepath2: Optional[pathlib.Path]) -> bool:
+        if filepath1 is None or filepath2 is None:
+            return False
         return filepath1.relative_to(self.template_dir) == filepath2.relative_to(self.template_dir)
 
     def is_template_file(self, filepath: pathlib.Path, include_descriptor: bool = False, include_readme: bool = False):
@@ -335,17 +343,17 @@ class TemplateProject:
         if filepath.is_absolute():
             filepath = filepath.relative_to(self.template_dir)
         filename = filepath.as_posix()
-        if filename in self.template.files:
-            del self.template.files[filename]
+        if filename in self.safe_template.files:
+            del self.safe_template.files[filename]
 
     def update_template_file(self, tfile: TemplateFile):
         filename = tfile.filename.as_posix()
-        self.template.files[filename] = tfile
+        self.safe_template.files[filename] = tfile
 
     def get_template_file(self, filepath: pathlib.Path) -> Optional[TemplateFile]:
         if filepath.is_absolute():
             filepath = filepath.relative_to(self.template_dir)
-        return self.template.files.get(filepath.as_posix(), None)
+        return self.safe_template.files.get(filepath.as_posix(), None)
 
     def _write_file(self, filepath: pathlib.Path, contents: bytes, force: bool):
         if filepath.exists() and not force:
@@ -361,22 +369,22 @@ class TemplateProject:
     def store_descriptor(self, force: bool):
         self._write_file(
             filepath=self.descriptor_path,
-            contents=json.dumps(self.template.serialize_local(), indent=4).encode(encoding=DEFAULT_ENCODING),
+            contents=json.dumps(self.safe_template.serialize_local(), indent=4).encode(encoding=DEFAULT_ENCODING),
             force=force,
         )
 
     def store_readme(self, force: bool):
-        if self.template.tdk_config.readme_file is None:
-            self.logger.warning(f'No README file specified for the template')
+        if self.safe_template.tdk_config.readme_file is None:
+            self.logger.warning('No README file specified for the template')
             return
         self._write_file(
-            filepath=self.template_dir / self.template.tdk_config.readme_file,
-            contents=self.template.readme.encode(encoding=DEFAULT_ENCODING),
+            filepath=self.template_dir / self.safe_template.tdk_config.readme_file,
+            contents=self.safe_template.readme.encode(encoding=DEFAULT_ENCODING),
             force=force,
         )
 
     def store_files(self, force: bool):
-        for tfile in self.template.files.values():
+        for tfile in self.safe_template.files.values():
             self._write_file(
                 filepath=self.template_dir / tfile.filename,
                 contents=tfile.content,
@@ -388,8 +396,8 @@ class TemplateProject:
         self.template_dir.mkdir(parents=True, exist_ok=True)
         self.logger.debug(f'Storing {self.TEMPLATE_FILE} descriptor')
         self.store_descriptor(force=force)
-        self.logger.debug(f'Storing README file')
+        self.logger.debug('Storing README file')
         self.store_readme(force=force)
-        self.logger.debug(f'Storing template files')
+        self.logger.debug('Storing template files')
         self.store_files(force=force)
-        self.logger.debug(f'Storing finished')
+        self.logger.debug('Storing finished')

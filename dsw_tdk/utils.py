@@ -2,10 +2,10 @@ import jinja2
 import pathlib
 import uuid
 
-from typing import List
+from typing import List, Set
 
-from dsw_tdk.consts import DEFAULT_ENCODING, TEMPLATE_FILE, DEFAULT_README, PATHSPEC_FACTORY
-from dsw_tdk.model import Template, TemplateFile, Format, Step, PackageFilter, TDKConfig
+from dsw_tdk.consts import DEFAULT_ENCODING, DEFAULT_README
+from dsw_tdk.model import Template, TemplateFile, Format, Step, PackageFilter
 from dsw_tdk.validation import TemplateValidator, FormatValidator, StepValidator
 
 j2_env = jinja2.Environment(
@@ -16,7 +16,7 @@ j2_env = jinja2.Environment(
 
 class UUIDGen:
 
-    _uuids = set()
+    _uuids = set()  # type: Set[uuid.UUID]
 
     @classmethod
     def generate(cls) -> uuid.UUID:

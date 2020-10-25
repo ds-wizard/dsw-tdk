@@ -4,7 +4,7 @@ import functools
 import pathlib
 import urllib.parse
 
-from typing import List
+from typing import List, Optional
 
 from dsw_tdk.consts import DEFAULT_ENCODING, APP, VERSION
 from dsw_tdk.model import Template, TemplateFile, TemplateFileType
@@ -106,7 +106,7 @@ class DSWAPIClient:
             return r.status == 204
 
     @handle_client_errors
-    async def login(self, email: str, password: str) -> str:
+    async def login(self, email: str, password: str) -> Optional[str]:
         req = {'email': email, 'password': password}
         body = await self._post_json('/tokens', json=req)
         self.token = body.get('token', None)
@@ -159,7 +159,7 @@ class DSWAPIClient:
     @handle_client_errors
     async def post_template(self, template: Template) -> Template:
         body = await self._post_json(
-            endpoint=f'/templates',
+            endpoint='/templates',
             json=template.serialize_remote(),
         )
         return _load_remote_template(body)
@@ -210,20 +210,22 @@ class DSWAPIClient:
 
 def _load_remote_file(data: dict) -> TemplateFile:
     content = data.get('content', None)  # type: str
+    filename = str(data.get('fileName', ''))  # type: str
     template_file = TemplateFile(
         remote_id=data.get('uuid', None),
         remote_type=TemplateFileType.file,
-        filename=pathlib.Path(urllib.parse.unquote(data.get('fileName'))),
+        filename=pathlib.Path(urllib.parse.unquote(filename)),
         content=content.encode(encoding=DEFAULT_ENCODING),
     )
     return template_file
 
 
 def _load_remote_asset(data: dict, content: bytes) -> TemplateFile:
+    filename = str(data.get('fileName', ''))
     template_file = TemplateFile(
         remote_id=data.get('uuid', None),
         remote_type=TemplateFileType.asset,
-        filename=pathlib.Path(urllib.parse.unquote(data.get('fileName'))),
+        filename=pathlib.Path(urllib.parse.unquote(filename)),
         content_type=data.get('contentType', None),
         content=content,
     )

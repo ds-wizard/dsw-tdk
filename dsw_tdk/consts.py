@@ -1,4 +1,4 @@
-import pathspec
+import pathspec  # type: ignore
 import re
 
 APP = 'dsw-tdk'
