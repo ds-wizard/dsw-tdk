@@ -169,7 +169,7 @@ class TemplateFile:
 class Template:
 
     def __init__(self, *, template_id=None, organization_id=None, version=None, name=None,
-                 description=None, readme=None, recommended_package_id=None, license=None,
+                 description=None, readme=None, recommended_package_id=None, template_license=None,
                  metamodel_version=None, tdk_config=None, loaded_json=None):
         self.template_id = template_id  # type: str
         self.organization_id = organization_id  # type: str
@@ -178,7 +178,7 @@ class Template:
         self.description = description  # type: str
         self.readme = readme  # type: str
         self.recommended_package_id = recommended_package_id  # type: str
-        self.license = license  # type: str
+        self.license = template_license  # type: str
         self.metamodel_version = metamodel_version or METAMODEL_VERSION  # type: int
         self.allowed_packages = []  # type: List[PackageFilter]
         self.formats = []  # type: List[Format]
@@ -199,7 +199,7 @@ class Template:
             version=data.get('version', None),
             name=data.get('name', None),
             description=data.get('description', None),
-            license=data.get('license', None),
+            template_license=data.get('license', None),
             metamodel_version=data.get('metamodelVersion', None),
             recommended_package_id=data.get('recommendedPackageId', None),
             readme=data.get('readme', None),
@@ -237,7 +237,7 @@ class Template:
         self.loaded_json['_tdk'] = self.tdk_config.serialize()
         return self.loaded_json
 
-    def serialize_remote(self) -> dict:
+    def serialize_remote(self) -> Dict[str, Any]:
         return {
             'id': self.id,
             'templateId': self.template_id,
@@ -270,7 +270,11 @@ class TemplateProject:
         self.descriptor_path = self.template_dir / self.TEMPLATE_FILE
         self.template = None  # type: Optional[Template]
         self.used_readme = None  # type: Optional[pathlib.Path]
-        self.logger = logger  # type: logging.Logger
+        self._logger = logger  # type: logging.Logger
+
+    @property
+    def logger(self) -> logging.Logger:
+        return self._logger
 
     @property
     def safe_template(self) -> Template:

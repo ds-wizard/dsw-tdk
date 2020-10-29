@@ -51,9 +51,9 @@ class ClickPrinter:
         click.echo(f': {message}')
 
     @classmethod
-    def watch_change(cls, type: watchgod.Change, filepath: pathlib.Path, root: pathlib.Path):
+    def watch_change(cls, change_type: watchgod.Change, filepath: pathlib.Path, root: pathlib.Path):
         timestamp = datetime.datetime.now().isoformat(timespec='milliseconds')
-        sign = cls.CHANGE_SIGNS[type]
+        sign = cls.CHANGE_SIGNS[change_type]
         click.secho('WATCH', fg='blue', bold=True, nl=False)
         click.echo(f'@{timestamp} {sign} {filepath.relative_to(root)}')
 
@@ -123,7 +123,7 @@ class ClickLogger(logging.Logger):
             click.echo(self._format_level(level, justify=self.show_timestamp) + sep, nl=False)
         click.echo(message)
 
-    def _log(self, level, msg, args, exc_info=None, extra=None, stack_info=False, stacklevel=1):
+    def _log(self, level, msg, *args, **kwargs):
         if not self.muted:
             # super()._log(level, msg, args, exc_info, extra, stack_info, stacklevel)
             self._print_message(level, msg)
@@ -163,14 +163,7 @@ class CLIContext:
         self.logger.muted = True
 
 
-def interact_builder(builder: TemplateBuilder):
-    prompt_fill('Template name', obj=builder, attr='name')
-    prompt_fill('Organization ID', obj=builder, attr='organization_id')
-    prompt_fill('Template ID', obj=builder, attr='template_id', default=slugify.slugify(builder.name))
-    prompt_fill('Version', obj=builder, attr='version', default='0.1.0')
-    prompt_fill('Description', obj=builder, attr='description', default='My custom template')
-    prompt_fill('License', obj=builder, attr='license', default='CC0')
-    click.echo('=' * 60)
+def interact_formats() -> Dict[str, FormatSpec]:
     add_format = click.confirm('Do you want to add a format?', default=True)
     formats = dict()  # type: Dict[str, FormatSpec]
     while add_format:
@@ -188,8 +181,34 @@ def interact_builder(builder: TemplateBuilder):
             formats[format_spec.name] = format_spec
         click.echo('=' * 60)
         add_format = click.confirm('Do you want to add yet another format?', default=False)
+    return formats
+
+
+def interact_builder(builder: TemplateBuilder):
+    prompt_fill('Template name', obj=builder, attr='name')
+    prompt_fill('Organization ID', obj=builder, attr='organization_id')
+    prompt_fill('Template ID', obj=builder, attr='template_id', default=slugify.slugify(builder.name))
+    prompt_fill('Version', obj=builder, attr='version', default='0.1.0')
+    prompt_fill('Description', obj=builder, attr='description', default='My custom template')
+    prompt_fill('License', obj=builder, attr='license', default='CC0')
+    click.echo('=' * 60)
+    formats = interact_formats()
     for format_spec in formats.values():
         builder.add_format(format_spec)
+
+
+def load_local(tdk: TDKCore, template_dir: pathlib.Path):
+    try:
+        tdk.load_local(template_dir=template_dir)
+    except Exception as e:
+        ClickPrinter.failure('Could not load local template')
+        ClickPrinter.error(f'> {e}')
+        exit(1)
+
+
+def dir_from_id(template_id: str) -> pathlib.Path:
+    return pathlib.Path.cwd() / template_id.replace(':', '_')
+
 
 #############################################################################################################
 
@@ -215,7 +234,7 @@ def main(ctx, quiet, debug, dot_env):
 
 
 @main.command(help='Create a new DSW template project.', name='new')
-@click.argument('TEMPLATE-DIR', type=DIR_TYPE, default=CURRENT_DIR, required=False)
+@click.argument('TEMPLATE-DIR', type=DIR_TYPE, default=None, required=False)
 @click.option('-f', '--force', is_flag=True, help='Overwrite any matching files.')
 @click.pass_context
 def new_template(ctx, template_dir, force):
@@ -227,6 +246,7 @@ def new_template(ctx, template_dir, force):
         ClickPrinter.failure('Exited...')
         exit(1)
     tdk = TDKCore(template=builder.build(), logger=ctx.obj.logger)
+    template_dir = template_dir or dir_from_id(tdk.template.id)
     tdk.prepare_local(template_dir=template_dir)
     try:
         tdk.store_local(force=force)
@@ -239,7 +259,7 @@ def new_template(ctx, template_dir, force):
 
 @main.command(help='Download template from DSW.', name='get')
 @click.argument('TEMPLATE-ID')
-@click.argument('TEMPLATE-DIR', type=DIR_TYPE, default=CURRENT_DIR, required=False)
+@click.argument('TEMPLATE-DIR', type=DIR_TYPE, default=None, required=False)
 @click.option('-s', '--api-server', metavar='API-URL', envvar='DSW_API', prompt=True,
               help='URL of DSW server API.')
 @click.option('-u', '--username', envvar='DSW_USERNAME', prompt=True, hide_input=False,
@@ -249,6 +269,8 @@ def new_template(ctx, template_dir, force):
 @click.option('-f', '--force', is_flag=True, help='Overwrite any existing files.')
 @click.pass_context
 def get_template(ctx, api_server, template_id, template_dir, username, password, force):
+    template_dir = template_dir or dir_from_id(template_id)
+
     async def main_routine():
         tdk = TDKCore(logger=ctx.obj.logger)
         try:
@@ -259,6 +281,7 @@ def get_template(ctx, api_server, template_id, template_dir, username, password,
             ClickPrinter.error('Could not get template:', bold=True)
             ClickPrinter.error(f'> {e.reason}\n> {e.message}')
             exit(1)
+        await tdk.client.safe_close()
         tdk.prepare_local(template_dir=template_dir)
         try:
             tdk.store_local(force=force)
@@ -266,10 +289,6 @@ def get_template(ctx, api_server, template_id, template_dir, username, password,
         except Exception as e:
             ClickPrinter.failure('Could not store template locally')
             ClickPrinter.error(f'> {e}')
-            try:
-                await tdk.client.close()
-            except Exception:
-                pass
             exit(1)
 
     loop = asyncio.get_event_loop()
@@ -281,22 +300,24 @@ def get_template(ctx, api_server, template_id, template_dir, username, password,
 @click.option('-s', '--api-server', metavar='API-URL', envvar='DSW_API', prompt=True,
               help='URL of DSW server API.')
 @click.option('-u', '--username', envvar='DSW_USERNAME', prompt=True, hide_input=False,
-              metavar='EMAIL', help='Admin username (email) for DSW instance.')
+              metavar='USERNAME', help='Admin username (email address) for DSW instance.')
 @click.option('-p', '--password', envvar='DSW_PASSWORD', prompt=True, hide_input=True,
               metavar='PASSWORD', help='Admin password for DSW instance.')
 @click.option('-f', '--force', is_flag=True, help='Delete template if already exists.')
 @click.option('-w', '--watch', is_flag=True, help='Enter watch mode to continually upload changes.')
 @click.pass_context
 def put_template(ctx, api_server, template_dir, username, password, force, watch):
+    tdk = TDKCore(logger=ctx.obj.logger)
+
+    async def watch_callback(changes):
+        changes = list(changes)
+        for change in changes:
+            ClickPrinter.watch_change(*change, root=tdk.project.template_dir)
+        if len(changes) > 0:
+            await tdk.process_changes(changes, force=force)
+
     async def main_routine():
-        # TODO: split
-        tdk = TDKCore(logger=ctx.obj.logger)
-        try:
-            tdk.load_local(template_dir=template_dir)
-        except Exception as e:
-            ClickPrinter.failure('Could not load local template')
-            ClickPrinter.error(f'> {e}')
-            exit(1)
+        load_local(tdk, template_dir)
         try:
             await tdk.init_client(api_server, username, password)
             await tdk.store_remote(force=force)
@@ -304,22 +325,13 @@ def put_template(ctx, api_server, template_dir, username, password, force, watch
 
             if watch:
                 ClickPrinter.watch('Entering watch mode... (press Ctrl+C to abort)')
-
-                async def watch_callback(changes):
-                    changes = list(changes)
-                    for change in changes:
-                        ClickPrinter.watch_change(*change, root=tdk.project.template_dir)
-                    if len(changes) > 0:
-                        await tdk.process_changes(changes, force=force)
                 await tdk.watch_project(watch_callback)
+
             await tdk.client.close()
         except DSWCommunicationError as e:
             ClickPrinter.failure('Could not upload template')
             ClickPrinter.error(f'> {e.reason}\n> {e.message}')
-            try:
-                await tdk.client.close()
-            except Exception:
-                pass
+            await tdk.client.safe_close()
             exit(1)
 
     loop = asyncio.get_event_loop()
@@ -334,12 +346,7 @@ def put_template(ctx, api_server, template_dir, username, password, force, watch
 @click.pass_context
 def create_package(ctx, template_dir, output, force):
     tdk = TDKCore(logger=ctx.obj.logger)
-    try:
-        tdk.load_local(template_dir)
-    except RuntimeError as e:
-        ClickPrinter.failure('Failed to load local template project')
-        ClickPrinter.error(f'> {e}')
-        exit(1)
+    load_local(tdk, template_dir)
     try:
         tdk.create_package(output=pathlib.Path(output), force=force)
     except Exception as e:
@@ -371,12 +378,8 @@ def list_templates(ctx, api_server, username, password, output_format):
         except DSWCommunicationError as e:
             ClickPrinter.failure('Failed to get list of templates')
             ClickPrinter.error(f'> {e.reason}\n> {e.message}')
-            try:
-                await tdk.client.close()
-            except Exception:
-                pass
             exit(1)
-        await tdk.client.close()
+        await tdk.client.safe_close()
 
     loop = asyncio.get_event_loop()
     loop.run_until_complete(main_routine())
@@ -387,12 +390,7 @@ def list_templates(ctx, api_server, username, password, output_format):
 @click.pass_context
 def verify_template(ctx, template_dir):
     tdk = TDKCore(logger=ctx.obj.logger)
-    try:
-        tdk.load_local(template_dir)
-    except RuntimeError as e:
-        ClickPrinter.failure('Failed to load local template project')
-        ClickPrinter.error(f'> {e}')
-        exit(1)
+    load_local(tdk, template_dir)
     errors = tdk.verify()
     if len(errors) == 0:
         ClickPrinter.success('The template is valid!')

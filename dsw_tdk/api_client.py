@@ -13,6 +13,13 @@ from dsw_tdk.model import Template, TemplateFile, TemplateFileType
 class DSWCommunicationError(RuntimeError):
 
     def __init__(self, reason: str, message: str):
+        """
+        Exception representing communication error with DSW.
+
+        Args:
+            reason (str): Cause of the error.
+            message (str): Additional information about the error.
+        """
         self.reason = reason
         self.message = message
 
@@ -64,7 +71,8 @@ class DSWAPIClient:
             headers.update(extra)
         return headers
 
-    def _check_status(self, r: aiohttp.ClientResponse, expected_status):
+    @staticmethod
+    def _check_status(r: aiohttp.ClientResponse, expected_status):
         r.raise_for_status()
         if r.status != expected_status:
             raise DSWCommunicationError(
@@ -74,12 +82,26 @@ class DSWAPIClient:
             )
 
     def __init__(self, api_url: str, session=None):
+        """
+        Exception representing communication error with DSW.
+
+        Args:
+            api_url (str): URL of DSW API for HTTP communication.
+            session (aiohttp.ClientSession): Optional custom session for HTTP communication.
+        """
         self.api_url = api_url
         self.token = None
         self.session = session or aiohttp.ClientSession(connector=aiohttp.TCPConnector(verify_ssl=False))
 
     async def close(self):
         await self.session.close()
+
+    async def safe_close(self) -> bool:
+        try:
+            await self.session.close()
+            return True
+        except Exception:
+            return False
 
     async def _post_json(self, endpoint, json) -> dict:
         async with self.session.post(f'{self.api_url}{endpoint}', json=json, headers=self._headers()) as r:

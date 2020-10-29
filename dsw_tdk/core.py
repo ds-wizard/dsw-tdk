@@ -14,6 +14,9 @@ from dsw_tdk.utils import UUIDGen
 from dsw_tdk.validation import ValidationError, TemplateValidator
 
 
+ChangeItem = Tuple[watchgod.Change, pathlib.Path]
+
+
 class TDKCore:
 
     def __init__(self, template: Optional[Template] = None, project: Optional[TemplateProject] = None,
@@ -23,6 +26,7 @@ class TDKCore:
         self.client = client
         self.logger = logger or logging.getLogger()
         self.loop = asyncio.get_event_loop()
+        self.changes_processor = ChangesProcessor(self)
 
     @property
     def safe_template(self) -> Template:
@@ -130,7 +134,7 @@ class TDKCore:
 
     async def cleanup_remote_files(self, remote_assets: List[TemplateFile], remote_files: List[TemplateFile]):
         futures = []
-        for filename, tfile in self.safe_project.safe_template.files.items():
+        for tfile in self.safe_project.safe_template.files.values():
             self.logger.debug(f'Cleaning up remote {tfile.filename.as_posix()}')
             for remote_asset in remote_assets:
                 if remote_asset.filename == tfile.filename:
@@ -160,7 +164,7 @@ class TDKCore:
 
     async def store_remote_files(self):
         futures = []
-        for filename, tfile in self.safe_project.template.files.items():
+        for tfile in self.safe_project.template.files.values():
             tfile.remote_id = None
             tfile.remote_type = TemplateFileType.file if tfile.is_text else TemplateFileType.asset
             futures.append(asyncio.ensure_future(
@@ -247,61 +251,88 @@ class TDKCore:
         except Exception as e:
             self.logger.error(f'Failed to update file {filepath.as_posix()}: {e}')
 
-    async def process_changes(self, changes: List[Tuple[watchgod.Change, pathlib.Path]], force: bool):
-        # TODO: split
-        descriptor_change = None
-        readme_change = None
-        file_changes = []
+    async def process_changes(self, changes: List[ChangeItem], force: bool):
+        self.changes_processor.clear()
+        await self.changes_processor.process_changes(changes, force)
 
+
+class ChangesProcessor:
+
+    def __init__(self, tdk: TDKCore):
+        self.tdk = tdk  # type: TDKCore
+        self.descriptor_change = None  # type: Optional[ChangeItem]
+        self.readme_change = None  # type: Optional[ChangeItem]
+        self.file_changes = []  # type: List[ChangeItem]
+
+    def clear(self):
+        self.descriptor_change = None
+        self.readme_change = None
+        self.file_changes = []
+
+    def _split_changes(self, changes: List[ChangeItem]):
         for change in changes:
-            if change[1] == self.safe_project.descriptor_path:
-                descriptor_change = change
-        if descriptor_change is not None:
-            if descriptor_change[0] == watchgod.Change.deleted:
-                raise RuntimeError(f'Deleted template descriptor {self.safe_project.descriptor_path} ... the end')
-            else:
-                self.logger.debug(f'Reloading {TemplateProject.TEMPLATE_FILE} file')
-                previous_id = self.safe_project.safe_template.id
-                self.safe_project.load_descriptor()
-                self.safe_project.load_readme()
-                new_id = self.safe_project.safe_template.id
-                if new_id != previous_id:
-                    self.logger.warning(f'Template ID changed from {previous_id} to {new_id}')
-                    self.safe_project.load()
-                    await self.store_remote(force=force)
-                    self.logger.info('Template fully reloaded... waiting for new changes')
-                    return  # Further changes are covered due to full reload
+            if change[1] == self.tdk.safe_project.descriptor_path:
+                self.descriptor_change = change
+            elif change[1] == self.tdk.safe_project.used_readme:
+                self.readme_change = change
+            elif self.tdk.safe_project.is_template_file(change[1]):
+                self.file_changes.append(change)
 
-        for change in changes:
-            if change[1] == self.safe_project.used_readme:
-                readme_change = change
-            elif self.safe_project.is_template_file(change[1]):
-                file_changes.append(change)
-        if readme_change is not None:
-            if readme_change[0] == watchgod.Change.deleted:
-                raise RuntimeError(f'Deleted used README file {self.safe_project.used_readme}')
-            else:
-                self.logger.debug('Reloading README file')
-                self.safe_project.load_readme()
-
-        if readme_change is not None or descriptor_change is not None:
-            self.logger.debug('Updating template descriptor (metadata)')
-            await self._update_descriptor()
-
+    async def _process_file_changes(self):
         futures = []
         deleted = set()
         updated = set()
-        for file_change in file_changes:
-            self.logger.debug(f'Processing {file_change}')
+        for file_change in self.file_changes:
+            self.tdk.logger.debug(f'Processing {file_change}')
             change_type = file_change[0]
             filepath = file_change[1]
             if change_type == watchgod.Change.deleted and filepath not in deleted:
-                self.logger.debug('Scheduling delete operation')
+                self.tdk.logger.debug('Scheduling delete operation')
                 deleted.add(filepath)
-                futures.append(asyncio.ensure_future(self._delete_file(filepath)))
+                futures.append(asyncio.ensure_future(self.tdk._delete_file(filepath)))
             elif filepath not in updated:
-                self.logger.debug('Scheduling update operation')
+                self.tdk.logger.debug('Scheduling update operation')
                 updated.add(filepath)
-                futures.append(asyncio.ensure_future(self._update_file(filepath)))
+                futures.append(asyncio.ensure_future(self.tdk._update_file(filepath)))
         await asyncio.gather(*futures)
-        self.logger.info('All changes processed... waiting for new changes')
+
+    async def _reload_descriptor(self, force: bool) -> bool:
+        if self.descriptor_change is None:
+            return False
+        if self.descriptor_change[0] == watchgod.Change.deleted:
+            raise RuntimeError(f'Deleted template descriptor {self.tdk.safe_project.descriptor_path} ... the end')
+        self.tdk.logger.debug(f'Reloading {TemplateProject.TEMPLATE_FILE} file')
+        previous_id = self.tdk.safe_project.safe_template.id
+        self.tdk.safe_project.load_descriptor()
+        self.tdk.safe_project.load_readme()
+        new_id = self.tdk.safe_project.safe_template.id
+        if new_id != previous_id:
+            self.tdk.logger.warning(f'Template ID changed from {previous_id} to {new_id}')
+            self.tdk.safe_project.load()
+            await self.tdk.store_remote(force=force)
+            self.tdk.logger.info('Template fully reloaded... waiting for new changes')
+            return True
+        return False
+
+    async def _reload_readme(self) -> bool:
+        if self.readme_change is None:
+            return False
+        if self.readme_change[0] == watchgod.Change.deleted:
+            raise RuntimeError(f'Deleted used README file {self.tdk.safe_project.used_readme}')
+        self.tdk.logger.debug('Reloading README file')
+        self.tdk.safe_project.load_readme()
+        return True
+
+    async def _update_descriptor(self):
+        if self.readme_change is not None or self.descriptor_change is not None:
+            self.tdk.logger.debug('Updating template descriptor (metadata)')
+            await self._update_descriptor()
+
+    async def process_changes(self, changes: List[ChangeItem], force: bool):
+        self._split_changes(changes)
+        full_reload = self._reload_descriptor(force)
+        if not full_reload:
+            await self._reload_readme()
+            await self._update_descriptor()
+            await self._process_file_changes()
+        self.tdk.logger.info('All changes processed... waiting for new changes')

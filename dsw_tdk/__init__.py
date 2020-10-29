@@ -1,3 +1,11 @@
+"""DSW Template Development Kit
+
+Template Development Kit for `Data Stewardship Wizard`_.
+
+.. _Data Stewardship Wizard:
+   https://ds-wizard.org
+
+"""
 from dsw_tdk.cli import main
 from dsw_tdk.consts import APP, VERSION
 

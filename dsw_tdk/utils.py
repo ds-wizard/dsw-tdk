@@ -11,12 +11,17 @@ from dsw_tdk.validation import TemplateValidator, FormatValidator, StepValidator
 j2_env = jinja2.Environment(
     loader=jinja2.PackageLoader('dsw_tdk'),
     extensions=['jinja2.ext.do'],
+    autoescape=True,
 )
 
 
 class UUIDGen:
 
     _uuids = set()  # type: Set[uuid.UUID]
+
+    @classmethod
+    def used(cls) -> Set[uuid.UUID]:
+        return cls._uuids
 
     @classmethod
     def generate(cls) -> uuid.UUID:
@@ -85,6 +90,10 @@ class TemplateBuilder:
     def __init__(self):
         self.template = Template()
         self._formats = []  # type: List[FormatSpec]
+
+    @property
+    def formats(self) -> List[FormatSpec]:
+        return self._formats
 
     def _validate_field(self, field_name: str):
         TemplateValidator.validate_field(self.template, field_name)
