@@ -253,7 +253,10 @@ class TDKCore:
 
     async def process_changes(self, changes: List[ChangeItem], force: bool):
         self.changes_processor.clear()
-        await self.changes_processor.process_changes(changes, force)
+        try:
+            await self.changes_processor.process_changes(changes, force)
+        except Exception as e:
+            self.logger.error(f'Failed to process changes: {e}')
 
 
 class ChangesProcessor:
@@ -326,11 +329,11 @@ class ChangesProcessor:
     async def _update_descriptor(self):
         if self.readme_change is not None or self.descriptor_change is not None:
             self.tdk.logger.debug('Updating template descriptor (metadata)')
-            await self._update_descriptor()
+            await self.tdk._update_descriptor()
 
     async def process_changes(self, changes: List[ChangeItem], force: bool):
         self._split_changes(changes)
-        full_reload = self._reload_descriptor(force)
+        full_reload = await self._reload_descriptor(force)
         if not full_reload:
             await self._reload_readme()
             await self._update_descriptor()

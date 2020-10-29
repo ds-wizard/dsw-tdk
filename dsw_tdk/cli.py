@@ -21,6 +21,8 @@ from dsw_tdk.validation import ValidationError
 CURRENT_DIR = pathlib.Path.cwd()
 DIR_TYPE = click.Path(exists=True, dir_okay=True, file_okay=False, resolve_path=True,
                       readable=True, writable=True)
+NEW_DIR_TYPE = click.Path(dir_okay=True, file_okay=False, resolve_path=True,
+                          readable=True, writable=True)
 
 
 class ClickPrinter:
@@ -214,7 +216,7 @@ def dir_from_id(template_id: str) -> pathlib.Path:
 
 
 @click.group(cls=AliasedGroup)
-@click.option('--dot-env', default='.env', required=False, show_default=True,
+@click.option('-e', '--dot-env', default='.env', required=False, show_default=True,
               type=click.Path(file_okay=True, dir_okay=False),
               help='Provide file with environment variables.')
 @click.option('-q', '--quiet', is_flag=True,
@@ -234,7 +236,7 @@ def main(ctx, quiet, debug, dot_env):
 
 
 @main.command(help='Create a new DSW template project.', name='new')
-@click.argument('TEMPLATE-DIR', type=DIR_TYPE, default=None, required=False)
+@click.argument('TEMPLATE-DIR', type=NEW_DIR_TYPE, default=None, required=False)
 @click.option('-f', '--force', is_flag=True, help='Overwrite any matching files.')
 @click.pass_context
 def new_template(ctx, template_dir, force):
@@ -259,12 +261,12 @@ def new_template(ctx, template_dir, force):
 
 @main.command(help='Download template from DSW.', name='get')
 @click.argument('TEMPLATE-ID')
-@click.argument('TEMPLATE-DIR', type=DIR_TYPE, default=None, required=False)
-@click.option('-s', '--api-server', metavar='API-URL', envvar='DSW_API', prompt=True,
-              help='URL of DSW server API.')
-@click.option('-u', '--username', envvar='DSW_USERNAME', prompt=True, hide_input=False,
+@click.argument('TEMPLATE-DIR', type=NEW_DIR_TYPE, default=None, required=False)
+@click.option('-s', '--api-server', metavar='API-URL', envvar='DSW_API',
+              prompt='URL of DSW API', help='URL of DSW server API.')
+@click.option('-u', '--username', envvar='DSW_USERNAME', prompt='Username', hide_input=False,
               metavar='EMAIL', help='Admin username (email) for DSW instance.')
-@click.option('-p', '--password', envvar='DSW_PASSWORD', prompt=True, hide_input=True,
+@click.option('-p', '--password', envvar='DSW_PASSWORD', prompt='Email', hide_input=True,
               metavar='PASSWORD', help='Admin password for DSW instance.')
 @click.option('-f', '--force', is_flag=True, help='Overwrite any existing files.')
 @click.pass_context
@@ -297,11 +299,11 @@ def get_template(ctx, api_server, template_id, template_dir, username, password,
 
 @main.command(help='Upload template to DSW.', name='put')
 @click.argument('TEMPLATE-DIR', type=DIR_TYPE, default=CURRENT_DIR, required=False)
-@click.option('-s', '--api-server', metavar='API-URL', envvar='DSW_API', prompt=True,
-              help='URL of DSW server API.')
-@click.option('-u', '--username', envvar='DSW_USERNAME', prompt=True, hide_input=False,
+@click.option('-s', '--api-server', metavar='API-URL', envvar='DSW_API',
+              prompt='URL of DSW API', help='URL of DSW server API.')
+@click.option('-u', '--username', envvar='DSW_USERNAME', prompt='Username', hide_input=False,
               metavar='USERNAME', help='Admin username (email address) for DSW instance.')
-@click.option('-p', '--password', envvar='DSW_PASSWORD', prompt=True, hide_input=True,
+@click.option('-p', '--password', envvar='DSW_PASSWORD', prompt='Password', hide_input=True,
               metavar='PASSWORD', help='Admin password for DSW instance.')
 @click.option('-f', '--force', is_flag=True, help='Delete template if already exists.')
 @click.option('-w', '--watch', is_flag=True, help='Enter watch mode to continually upload changes.')
@@ -331,6 +333,7 @@ def put_template(ctx, api_server, template_dir, username, password, force, watch
         except DSWCommunicationError as e:
             ClickPrinter.failure('Could not upload template')
             ClickPrinter.error(f'> {e.reason}\n> {e.message}')
+            ClickPrinter.error('> Probably incorrect API URL or template already exists...')
             await tdk.client.safe_close()
             exit(1)
 

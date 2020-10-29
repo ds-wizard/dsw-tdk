@@ -261,7 +261,7 @@ def _to_ordered_dict(tuples: List[Tuple[str, Any]]) -> OrderedDict:
 class TemplateProject:
 
     TEMPLATE_FILE = 'template.json'
-    DEFAULT_PATTERNS = ['!.git', '!.*', '!template.json']
+    DEFAULT_PATTERNS = ['!**/.git/**/*', '!**/.*', '!template.json', '!template.zip']
 
     json_decoder = json.JSONDecoder(object_pairs_hook=_to_ordered_dict)
 
@@ -324,7 +324,10 @@ class TemplateProject:
         return pathspec.PathSpec.from_lines(PATHSPEC_FACTORY, patterns)
 
     def list_files(self) -> List[pathlib.Path]:
-        return list(pathlib.Path(p) for p in self.files_pathspec.match_tree_files(self.template_dir))
+        files = (pathlib.Path(p) for p in self.files_pathspec.match_tree_files(self.template_dir))
+        if self.used_readme is not None:
+            return list(p for p in files if p != self.used_readme.relative_to(self.template_dir))
+        return list(files)
 
     def _relative_paths_eq(self, filepath1: Optional[pathlib.Path], filepath2: Optional[pathlib.Path]) -> bool:
         if filepath1 is None or filepath2 is None:
