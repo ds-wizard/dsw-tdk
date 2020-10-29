@@ -4,6 +4,7 @@
 [![PyPI](https://img.shields.io/pypi/v/dsw-tdk)](https://pypi.org/project/dsw-tdk/)
 [![Requires.io](https://img.shields.io/requires/github/ds-wizard/dsw-tdk)](setup.py)
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/6c98735aecb144abaaee19361d7c8976)](https://www.codacy.com/gh/ds-wizard/dsw-tdk/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=ds-wizard/dsw-tdk&amp;utm_campaign=Badge_Grade)
+![Docker Pulls](https://img.shields.io/docker/pulls/datastewardshipwizard/dsw-tdk)
 [![LICENSE](https://img.shields.io/github/license/ds-wizard/dsw-tdk)](LICENSE)
 
 Template Development Kit for [Data Stewardship Wizard](https://ds-wizard.org)
