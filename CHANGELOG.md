@@ -7,7 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-Initial DSW Template Development Kit
+
+## [2.8.0]
+
+Initial DSW Template Development Kit (versioned as part of the [DSW platform](https://github.com/ds-wizard))
 
 ### Added
 
@@ -19,3 +22,4 @@ Initial DSW Template Development Kit
 - `package` for creating an importable ZIP package from local project
 
 [Unreleased]: /../../compare/master...develop
+[2.8.0]: /../../tree/v2.8.0

@@ -7,7 +7,7 @@ with open(os.path.join(this_directory, 'README.md'), encoding='utf-8') as f:
 
 setup(
     name='dsw-tdk',
-    version='2.7.0-alpha.1',
+    version='2.8.0',
     keywords='dsw template toolkit jinja documents',
     description='Data Stewardship Wizard Template Development Toolkit',
     long_description=long_description,
@@ -16,6 +16,11 @@ setup(
     author_email='marek.suchanek@ds-wizard.org',
     license='Apache-2.0',
     packages=find_packages(),
+    package_data={
+        'dsw_tdk': [
+            'templates/*.j2',
+        ]
+    },
     entry_points={
         'console_scripts': [
             'dsw-tdk = dsw_tdk:main',
@@ -32,8 +37,10 @@ setup(
         'python-slugify',
         'watchgod',
     ],
+    python_requires='>=3.6, <4',
     setup_requires=[
         'pytest-runner',
+        'wheel',
     ],
     tests_require=[
         'pytest',
@@ -44,8 +51,14 @@ setup(
         'Programming Language :: Python',
         'Programming Language :: Python :: Implementation :: CPython',
         'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.8',
-        'Topic :: Internet :: WWW/HTTP :: HTTP Servers',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.9',
+        'Topic :: Internet :: WWW/HTTP',
         'Topic :: Internet :: WWW/HTTP :: Indexing/Search',
+        'Topic :: Internet :: WWW/HTTP :: Site Management',
+        'Topic :: Utilities',
     ],
+    zip_safe=False,
 )
