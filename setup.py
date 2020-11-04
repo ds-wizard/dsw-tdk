@@ -7,7 +7,7 @@ with open(os.path.join(this_directory, 'README.md'), encoding='utf-8') as f:
 
 setup(
     name='dsw-tdk',
-    version='2.8.0-rc.1',
+    version='2.8.0',
     keywords='dsw template toolkit jinja documents',
     description='Data Stewardship Wizard Template Development Toolkit',
     long_description=long_description,
@@ -37,6 +37,7 @@ setup(
         'python-slugify',
         'watchgod',
     ],
+    python_requires='>=3.6, <4',
     setup_requires=[
         'pytest-runner',
         'wheel',
