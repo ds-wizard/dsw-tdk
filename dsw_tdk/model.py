@@ -261,7 +261,7 @@ def _to_ordered_dict(tuples: List[Tuple[str, Any]]) -> OrderedDict:
 class TemplateProject:
 
     TEMPLATE_FILE = 'template.json'
-    DEFAULT_PATTERNS = ['!**/.git/**/*', '!**/.*', '!template.json', '!template.zip']
+    DEFAULT_PATTERNS = ['!**/.git/**/*', '!template.json', '!template.zip']
 
     json_decoder = json.JSONDecoder(object_pairs_hook=_to_ordered_dict)
 
@@ -339,7 +339,7 @@ class TemplateProject:
             return True
         if include_descriptor and self._relative_paths_eq(filepath, self.descriptor_path):
             return True
-        return self.files_pathspec.match_file(filepath)
+        return self.files_pathspec.match_file(filepath.relative_to(self.template_dir))
 
     def load(self):
         self.load_descriptor()
