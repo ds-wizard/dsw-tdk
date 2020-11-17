@@ -7,7 +7,7 @@ with open(os.path.join(this_directory, 'README.md'), encoding='utf-8') as f:
 
 setup(
     name='dsw-tdk',
-    version='2.8.0',
+    version='2.8.1',
     keywords='dsw template toolkit jinja documents',
     description='Data Stewardship Wizard Template Development Toolkit',
     long_description=long_description,

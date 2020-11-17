@@ -9,7 +9,7 @@
 [![LICENSE](https://img.shields.io/github/license/ds-wizard/dsw-tdk)](LICENSE)
 [![Documentation Status](https://readthedocs.org/projects/ds-wizard/badge/?version=latest)](https://docs.ds-wizard.org/en/latest/)
 
-Template Development Kit for [Data Stewardship Wizard](https://ds-wizard.org)
+*Template Development Kit for [Data Stewardship Wizard](https://ds-wizard.org)*
 
 ## Installation
 
