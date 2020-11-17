@@ -7,13 +7,14 @@ with open(os.path.join(this_directory, 'README.md'), encoding='utf-8') as f:
 
 setup(
     name='dsw-tdk',
-    version='2.8.0',
+    version='2.8.1',
     keywords='dsw template toolkit jinja documents',
     description='Data Stewardship Wizard Template Development Toolkit',
     long_description=long_description,
     long_description_content_type='text/markdown',
     author='Marek Suchánek',
     author_email='marek.suchanek@ds-wizard.org',
+    url='https://github.com/ds-wizard/dsw-tdk',
     license='Apache-2.0',
     packages=find_packages(),
     package_data={
