@@ -2,7 +2,7 @@ import pathspec  # type: ignore
 import re
 
 APP = 'dsw-tdk'
-VERSION = '2.8.1'
+VERSION = '2.9.0'
 
 REGEX_SEMVER = re.compile(r'^[0-9]+\.[0-9]+\.[0-9]+$')
 REGEX_ORGANIZATION_ID = re.compile(r'^(?![.])(?!.*[.]$)[a-zA-Z0-9.]+$')
