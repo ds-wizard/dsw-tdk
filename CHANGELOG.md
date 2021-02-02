@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Added timestamps into descriptor for ZIP package.
+
 ## [2.10.0]
 
 Released for version consistency with other DSW tools.

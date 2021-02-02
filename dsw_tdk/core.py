@@ -1,4 +1,5 @@
 import asyncio
+import datetime
 import json
 import logging
 import pathlib
@@ -199,6 +200,9 @@ class TDKCore:
                 package.writestr(str('template/assets/' + tfile.filename.as_posix()), tfile.content)
         descriptor['files'] = files
         descriptor['assets'] = assets
+        timestamp = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+        descriptor['createdAt'] = timestamp
+        descriptor['updatedAt'] = timestamp
         self.logger.debug('Packaging template.json file')
         package.writestr('template/template.json', data=json.dumps(descriptor, indent=4))
         self.logger.debug('Closing ZIP package')
