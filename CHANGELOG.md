@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.11.0]
+
+### Fixed
+
+- Added timestamps into descriptor for ZIP package.
+
 ## [2.10.0]
 
 Released for version consistency with other DSW tools.
@@ -41,3 +47,4 @@ Initial DSW Template Development Kit (versioned as part of the [DSW platform](ht
 [2.8.1]: /../../tree/v2.8.1
 [2.9.0]: /../../tree/v2.9.0
 [2.10.0]: /../../tree/v2.10.0
+[2.11.0]: /../../tree/v2.11.0
