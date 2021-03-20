@@ -6,7 +6,7 @@ click==7.1.2
 colorama==0.4.4
 humanize==3.1.0
 idna==2.10
-Jinja2==2.11.2
+Jinja2==2.11.3
 MarkupSafe==1.1.1
 multidict==5.0.0
 pathspec==0.8.0
