@@ -18,6 +18,35 @@ from dsw_tdk.validation import ValidationError, TemplateValidator
 ChangeItem = Tuple[watchgod.Change, pathlib.Path]
 
 
+class TDKProcessingError(RuntimeError):
+
+    def __init__(self, message: str, hint: str):
+        self.message = message
+        self.hint = hint
+
+
+METAMODEL_VERSION_SUPPORT = {
+    1: (2, 5, 0),
+    2: (2, 6, 0),
+    3: (2, 12, 0),
+}
+
+
+def _check_metamodel_version(metamodel_version: int, api_version: Tuple[int, int, int]):
+    vtag = f'v{api_version[0]}.{api_version[1]}.{api_version[2]}'
+    hint = 'Fix your metamodelVersion in template.json and/or visit docs'
+    if metamodel_version not in METAMODEL_VERSION_SUPPORT.keys():
+        raise TDKProcessingError(f'Unknown metamodel version: {metamodel_version}', hint)
+    min_version = METAMODEL_VERSION_SUPPORT[metamodel_version]
+    if min_version > api_version:
+        raise TDKProcessingError(f'Unsupported metamodel version for API {vtag}', hint)
+    if metamodel_version + 1 in METAMODEL_VERSION_SUPPORT.keys():
+        max_version = METAMODEL_VERSION_SUPPORT[metamodel_version + 1]
+        if api_version >= max_version:
+            raise TDKProcessingError(f'Unsupported metamodel version for API {vtag}', hint)
+    print("check ok")
+
+
 class TDKCore:
 
     def __init__(self, template: Optional[Template] = None, project: Optional[TemplateProject] = None,
@@ -25,6 +54,7 @@ class TDKCore:
         self.template = template
         self.project = project
         self.client = client
+        self.remote_version = (0, 0, 0)
         self.logger = logger or logging.getLogger()
         self.loop = asyncio.get_event_loop()
         self.changes_processor = ChangesProcessor(self)
@@ -52,6 +82,8 @@ class TDKCore:
         self.client = DSWAPIClient(api_url=api_url)
         await self.client.login(email=username, password=password)
         self.logger.info(f'Successfully authenticated as {username}')
+        self.remote_version = v = await self.client.get_api_version()
+        self.logger.debug(f'Connected to API version {v[0]}.{v[1]}.{v[2]}')
 
     def prepare_local(self, template_dir):
         self.logger.debug('Preparing local template project')
@@ -95,6 +127,10 @@ class TDKCore:
 
     async def store_remote(self, force: bool):
         self.template = self.safe_project.template
+        _check_metamodel_version(
+            metamodel_version=self.safe_template.metamodel_version,
+            api_version=self.remote_version,
+        )
         template_id = self.safe_template.id
         template_exists = await self.safe_client.check_template_exists(template_id=template_id)
         if template_exists and force:

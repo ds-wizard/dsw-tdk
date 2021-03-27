@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.12.1]
+
+### Added
+
+- Checks for metamodel version compatibility
+
+### Fixed
+
+- Metamodel version matching new DSW
+
 ## [2.12.0]
 
 Released for version consistency with other DSW tools.
