@@ -12,7 +12,7 @@ import watchgod  # type: ignore
 from typing import Dict
 
 from dsw_tdk.api_client import DSWCommunicationError
-from dsw_tdk.core import TDKCore
+from dsw_tdk.core import TDKCore, TDKProcessingError
 from dsw_tdk.consts import VERSION, DEFAULT_LIST_FORMAT
 from dsw_tdk.model import Template
 from dsw_tdk.utils import TemplateBuilder, FormatSpec
@@ -330,6 +330,11 @@ def put_template(ctx, api_server, template_dir, username, password, force, watch
                 await tdk.watch_project(watch_callback)
 
             await tdk.client.close()
+        except TDKProcessingError as e:
+            ClickPrinter.failure('Could not upload template')
+            ClickPrinter.error(f'> {e.message}\n> {e.hint}')
+            await tdk.client.safe_close()
+            exit(1)
         except DSWCommunicationError as e:
             ClickPrinter.failure('Could not upload template')
             ClickPrinter.error(f'> {e.reason}\n> {e.message}')
