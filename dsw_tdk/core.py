@@ -44,7 +44,6 @@ def _check_metamodel_version(metamodel_version: int, api_version: Tuple[int, int
         max_version = METAMODEL_VERSION_SUPPORT[metamodel_version + 1]
         if api_version >= max_version:
             raise TDKProcessingError(f'Unsupported metamodel version for API {vtag}', hint)
-    print("check ok")
 
 
 class TDKCore:
@@ -156,13 +155,14 @@ class TDKCore:
     async def _delete_template_file(self, tfile: TemplateFile, project_update: bool = False):
         try:
             self.logger.debug(f'Deleting existing remote {tfile.remote_type.value} '
-                              f'{tfile.filename.as_posix()} ({tfile.remote_id})')
+                              f'{tfile.filename.as_posix()} ({tfile.remote_id}) started')
             if tfile.remote_type == TemplateFileType.asset:
                 result = await self.safe_client.delete_template_asset(template_id=self.safe_template.id, asset_id=tfile.remote_id)
             else:
                 result = await self.safe_client.delete_template_file(template_id=self.safe_template.id, file_id=tfile.remote_id)
             self.logger.debug(f'Deleting existing remote {tfile.remote_type.value} '
-                              f'{tfile.filename.as_posix()} ({tfile.remote_id}): {result}')
+                              f'{tfile.filename.as_posix()} ({tfile.remote_id}) '
+                              f'finished: {"ok" if result else "failed"}')
             if project_update and result:
                 self.safe_project.remove_template_file(tfile.filename)
         except Exception as e:
@@ -170,44 +170,35 @@ class TDKCore:
                               f'{tfile.filename.as_posix()}: {e}')
 
     async def cleanup_remote_files(self, remote_assets: List[TemplateFile], remote_files: List[TemplateFile]):
-        futures = []
         for tfile in self.safe_project.safe_template.files.values():
             self.logger.debug(f'Cleaning up remote {tfile.filename.as_posix()}')
             for remote_asset in remote_assets:
                 if remote_asset.filename == tfile.filename:
-                    futures.append(asyncio.ensure_future(
-                        self._delete_template_file(tfile=remote_asset, project_update=False)
-                    ))
+                    await self._delete_template_file(tfile=remote_asset, project_update=False)
             for remote_file in remote_files:
                 if remote_file.filename == tfile.filename:
-                    futures.append(asyncio.ensure_future(
-                        self._delete_template_file(tfile=remote_file, project_update=False)
-                    ))
-        await asyncio.gather(*futures)
+                    await self._delete_template_file(tfile=remote_file, project_update=False)
 
     async def _create_template_file(self, tfile: TemplateFile, project_update: bool = False):
         try:
-            self.logger.debug(f'Storing remote {tfile.remote_type.value} {tfile.filename.as_posix()} ({tfile.remote_id})')
+            self.logger.debug(f'Storing remote {tfile.remote_type.value} '
+                              f'{tfile.filename.as_posix()} started')
             if tfile.remote_type == TemplateFileType.asset:
                 result = await self.safe_client.post_template_asset(template_id=self.safe_template.id, tfile=tfile)
             else:
                 result = await self.safe_client.post_template_file(template_id=self.safe_template.id, tfile=tfile)
-            self.logger.debug(f'Storing remote {tfile.remote_type.value} {tfile.filename.as_posix()} '
-                              f'({tfile.remote_id}): {result.remote_id}')
+            self.logger.debug(f'Storing remote {tfile.remote_type.value} '
+                              f'{tfile.filename.as_posix()} finished: {result.remote_id}')
             if project_update and result is not None:
                 self.safe_project.update_template_file(result)
         except Exception as e:
             self.logger.error(f'Failed to store remote {tfile.remote_type.value} {tfile.filename.as_posix()}: {e}')
 
     async def store_remote_files(self):
-        futures = []
         for tfile in self.safe_project.template.files.values():
             tfile.remote_id = None
             tfile.remote_type = TemplateFileType.file if tfile.is_text else TemplateFileType.asset
-            futures.append(asyncio.ensure_future(
-                self._create_template_file(tfile=tfile, project_update=True)
-            ))
-        await asyncio.gather(*futures)
+            await self._create_template_file(tfile=tfile, project_update=True)
 
     def create_package(self, output: pathlib.Path, force: bool):
         if output.exists() and not force:
@@ -322,7 +313,6 @@ class ChangesProcessor:
                 self.file_changes.append(change)
 
     async def _process_file_changes(self):
-        futures = []
         deleted = set()
         updated = set()
         for file_change in self.file_changes:
@@ -332,12 +322,11 @@ class ChangesProcessor:
             if change_type == watchgod.Change.deleted and filepath not in deleted:
                 self.tdk.logger.debug('Scheduling delete operation')
                 deleted.add(filepath)
-                futures.append(asyncio.ensure_future(self.tdk._delete_file(filepath)))
+                await self.tdk._delete_file(filepath)
             elif filepath not in updated:
                 self.tdk.logger.debug('Scheduling update operation')
                 updated.add(filepath)
-                futures.append(asyncio.ensure_future(self.tdk._update_file(filepath)))
-        await asyncio.gather(*futures)
+                await self.tdk._update_file(filepath)
 
     async def _reload_descriptor(self, force: bool) -> bool:
         if self.descriptor_change is None:
