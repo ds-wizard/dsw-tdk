@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.13.0]
+
 ### Fixed
 
 - `dsw-tdk put` uploads file synchronously to avoid inconsistency
@@ -68,3 +70,5 @@ Initial DSW Template Development Kit (versioned as part of the [DSW platform](ht
 [2.10.0]: /../../tree/v2.10.0
 [2.11.0]: /../../tree/v2.11.0
 [2.12.0]: /../../tree/v2.12.0
+[2.12.1]: /../../tree/v2.12.1
+[2.13.0]: /../../tree/v2.13.0
