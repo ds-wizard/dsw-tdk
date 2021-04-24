@@ -1,6 +1,7 @@
 import aiohttp
 import aiohttp.client_exceptions
 import functools
+import multidict
 import pathlib
 import urllib.parse
 
@@ -207,12 +208,17 @@ class DSWAPIClient:
 
     @handle_client_errors
     async def post_template_asset(self, template_id: str, tfile: TemplateFile):
-        data = aiohttp.FormData()
-        data.add_field('file',
-                       tfile.content,
-                       filename=tfile.filename.as_posix(),
-                       content_type=tfile.content_type)
-        async with self.session.post(f'{self.api_url}/templates/{template_id}/assets', data=data, headers=self._headers()) as r:
+        headers = multidict.CIMultiDict()  # type: multidict.CIMultiDict
+        headers[aiohttp.hdrs.CONTENT_TYPE] = tfile.content_type
+        headers[aiohttp.hdrs.CONTENT_DISPOSITION] = f'form-data; name="file"; ' \
+                                                    f'filename="{tfile.filename.as_posix()}"'
+        with aiohttp.MultipartWriter('form-data', boundary='tdk-asset-boundary') as mpwriter:
+            mpwriter.append(tfile.content, headers=headers)
+        async with self.session.post(
+                f'{self.api_url}/templates/{template_id}/assets',
+                data=mpwriter,
+                headers=self._headers()
+        ) as r:
             self._check_status(r, expected_status=201)
             body = await r.json()
             return _load_remote_asset(body, tfile.content)

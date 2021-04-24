@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - `dsw-tdk put` uploads file synchronously to avoid inconsistency
+- Fix `Content-Disposition` escaping in filename of uploaded assets
 
 ## [2.12.1]
 

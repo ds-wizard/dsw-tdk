@@ -33,6 +33,7 @@ setup(
         'colorama',
         'humanize',
         'Jinja2',
+        'multidict',
         'pathspec',
         'python-dotenv',
         'python-slugify',
