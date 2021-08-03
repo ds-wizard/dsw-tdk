@@ -236,10 +236,9 @@ class DSWAPIClient:
         return await self._delete(f'/templates/{template_id}/assets/{asset_id}')
 
     @handle_client_errors
-    async def get_api_version(self) -> Tuple[int, int, int]:
+    async def get_api_version(self) -> str:
         body = await self._get_json('/')
-        parts = body['version'][1:].split('~')[0].split('.')
-        return int(parts[0]), int(parts[1]), int(parts[2])
+        return body['version']
 
 
 def _load_remote_file(data: dict) -> TemplateFile:

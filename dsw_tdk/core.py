@@ -3,13 +3,14 @@ import datetime
 import json
 import logging
 import pathlib
+import re
 import watchgod  # type: ignore
 import zipfile
 
 from typing import List, Optional, Tuple
 
 from dsw_tdk.api_client import DSWAPIClient, DSWCommunicationError
-from dsw_tdk.consts import DEFAULT_ENCODING
+from dsw_tdk.consts import DEFAULT_ENCODING, REGEX_SEMVER
 from dsw_tdk.model import TemplateProject, Template, TemplateFile, TemplateFileType
 from dsw_tdk.utils import UUIDGen
 from dsw_tdk.validation import ValidationError, TemplateValidator
@@ -32,28 +33,35 @@ METAMODEL_VERSION_SUPPORT = {
 }
 
 
-def _check_metamodel_version(metamodel_version: int, api_version: Tuple[int, int, int]):
-    vtag = f'v{api_version[0]}.{api_version[1]}.{api_version[2]}'
-    hint = 'Fix your metamodelVersion in template.json and/or visit docs'
-    if metamodel_version not in METAMODEL_VERSION_SUPPORT.keys():
-        raise TDKProcessingError(f'Unknown metamodel version: {metamodel_version}', hint)
-    min_version = METAMODEL_VERSION_SUPPORT[metamodel_version]
-    if min_version > api_version:
-        raise TDKProcessingError(f'Unsupported metamodel version for API {vtag}', hint)
-    if metamodel_version + 1 in METAMODEL_VERSION_SUPPORT.keys():
-        max_version = METAMODEL_VERSION_SUPPORT[metamodel_version + 1]
-        if api_version >= max_version:
-            raise TDKProcessingError(f'Unsupported metamodel version for API {vtag}', hint)
-
-
 class TDKCore:
+
+    def _check_metamodel_version(self):
+        mm_ver = self.safe_template.metamodel_version
+        api_version = self.remote_version.split('~', maxsplit=1)[0]
+        if '-' in api_version:
+            api_version = api_version.split('-', maxsplit=1)[0]
+        if not re.match(REGEX_SEMVER, api_version):
+            self.logger.warning(f'Using non-stable release of API: {self.remote_version}')
+        parts = api_version.split('.')
+        ver = (int(parts[0]), int(parts[1]), int(parts[2]))
+        vtag = f'v{ver[0]}.{ver[1]}.{ver[2]}'
+        hint = 'Fix your metamodelVersion in template.json and/or visit docs'
+        if mm_ver not in METAMODEL_VERSION_SUPPORT.keys():
+            raise TDKProcessingError(f'Unknown metamodel version: {mm_ver}', hint)
+        min_version = METAMODEL_VERSION_SUPPORT[mm_ver]
+        if min_version > ver:
+            raise TDKProcessingError(f'Unsupported metamodel version for API {vtag}', hint)
+        if mm_ver + 1 in METAMODEL_VERSION_SUPPORT.keys():
+            max_version = METAMODEL_VERSION_SUPPORT[mm_ver + 1]
+            if ver >= max_version:
+                raise TDKProcessingError(f'Unsupported metamodel version for API {vtag}', hint)
 
     def __init__(self, template: Optional[Template] = None, project: Optional[TemplateProject] = None,
                  client: Optional[DSWAPIClient] = None, logger: Optional[logging.Logger] = None):
         self.template = template
         self.project = project
         self.client = client
-        self.remote_version = (0, 0, 0)
+        self.remote_version = 'unknown~??????'
         self.logger = logger or logging.getLogger()
         self.loop = asyncio.get_event_loop()
         self.changes_processor = ChangesProcessor(self)
@@ -81,8 +89,7 @@ class TDKCore:
         self.client = DSWAPIClient(api_url=api_url)
         await self.client.login(email=username, password=password)
         self.logger.info(f'Successfully authenticated as {username}')
-        self.remote_version = v = await self.client.get_api_version()
-        self.logger.debug(f'Connected to API version {v[0]}.{v[1]}.{v[2]}')
+        self.logger.debug(f'Connected to API version {self.remote_version}')
 
     def prepare_local(self, template_dir):
         self.logger.debug('Preparing local template project')
@@ -126,10 +133,7 @@ class TDKCore:
 
     async def store_remote(self, force: bool):
         self.template = self.safe_project.template
-        _check_metamodel_version(
-            metamodel_version=self.safe_template.metamodel_version,
-            api_version=self.remote_version,
-        )
+        self._check_metamodel_version()
         template_id = self.safe_template.id
         template_exists = await self.safe_client.check_template_exists(template_id=template_id)
         if template_exists and force:
