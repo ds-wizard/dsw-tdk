@@ -5,7 +5,7 @@ import multidict
 import pathlib
 import urllib.parse
 
-from typing import List, Optional, Tuple
+from typing import List, Optional
 
 from dsw_tdk.consts import DEFAULT_ENCODING, APP, VERSION
 from dsw_tdk.model import Template, TemplateFile, TemplateFileType
