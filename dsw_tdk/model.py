@@ -110,7 +110,7 @@ class TDKConfig:
     def __init__(self, *, version=None, readme_file=None, files=None):
         self.version = version or VERSION  # type: str
         self.readme_file = readme_file or self.DEFAULT_README  # type: Optional[pathlib.Path]
-        self.files = files or self.DEFAULT_FILES  # type: List[str]
+        self.files = files or []  # type: List[str]
 
     @classmethod
     def load(cls, data):
