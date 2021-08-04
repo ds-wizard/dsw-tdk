@@ -41,8 +41,11 @@ class TDKCore:
         api_version = self.remote_version.split('~', maxsplit=1)[0]
         if '-' in api_version:
             api_version = api_version.split('-', maxsplit=1)[0]
+        if 'v' == api_version[0]:
+            api_version = api_version[1:]
         if not re.match(REGEX_SEMVER, api_version):
             self.logger.warning(f'Using non-stable release of API: {self.remote_version}')
+            return
         parts = api_version.split('.')
         ver = (int(parts[0]), int(parts[1]), int(parts[2]))
         vtag = f'v{ver[0]}.{ver[1]}.{ver[2]}'
@@ -89,6 +92,7 @@ class TDKCore:
         self.logger.info(f'Connecting to {api_url}')
         self.client = DSWAPIClient(api_url=api_url)
         await self.client.login(email=username, password=password)
+        self.remote_version = await self.client.get_api_version()
         self.logger.info(f'Successfully authenticated as {username}')
         self.logger.debug(f'Connected to API version {self.remote_version}')
 

@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.2.1]
+
+### Fixed
+
+- Retrieving remote API version
+- No default start pattern for files
+
 ## [3.2.0]
 
 ### Changed
