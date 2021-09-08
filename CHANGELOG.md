@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.3.0]
+
+Released for version consistency with other DSW tools.
+
 ## [3.2.1]
 
 ### Fixed
