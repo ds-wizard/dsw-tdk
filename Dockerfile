@@ -1,6 +1,6 @@
 FROM python:3.9-slim
 
-RUN apt-get update && apt-get install -qq -y gcc=4:8.3.0-1 \
+RUN apt-get update && apt-get install -qq -y gcc=4:10.2.1-1 \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/*
 
