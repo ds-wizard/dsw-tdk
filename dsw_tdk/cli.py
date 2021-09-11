@@ -1,5 +1,5 @@
 import asyncio
-import click
+import click  # type: ignore
 import datetime
 import dotenv
 import humanize  # type: ignore

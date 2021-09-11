@@ -1,4 +1,4 @@
-import jinja2
+import jinja2  # type: ignore
 import pathlib
 import uuid
 
