@@ -338,7 +338,9 @@ def put_template(ctx, api_server, template_dir, username, password, force, watch
         except DSWCommunicationError as e:
             ClickPrinter.failure('Could not upload template')
             ClickPrinter.error(f'> {e.reason}\n> {e.message}')
-            ClickPrinter.error('> Probably incorrect API URL or template already exists...')
+            ClickPrinter.error('> Probably incorrect API URL, metamodel version, '
+                               'or template already exists...')
+            ClickPrinter.error('> Check if you are using the matching version')
             await tdk.client.safe_close()
             exit(1)
 
