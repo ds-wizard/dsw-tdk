@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.5.0]
+
+### Changed
+
+- Updated with template metamodel 5
+- Updated several dependencies
+
 ## [3.4.0]
 
 Released for version consistency with other DSW tools.
@@ -115,3 +122,4 @@ Initial DSW Template Development Kit (versioned as part of the [DSW platform](ht
 [3.2.0]: /../../tree/v3.2.0
 [3.3.0]: /../../tree/v3.3.0
 [3.4.0]: /../../tree/v3.4.0
+[3.5.0]: /../../tree/v3.5.0
