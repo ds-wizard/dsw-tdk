@@ -193,16 +193,17 @@ class Template:
 
     @classmethod
     def _common_load(cls, data):
+        org_id, tmp_id, version = data.get('id', '?:?:0.0.0').split(':')
         template = Template(
-            template_id=data.get('templateId', None),
-            organization_id=data.get('organizationId', None),
-            version=data.get('version', None),
-            name=data.get('name', None),
-            description=data.get('description', None),
-            template_license=data.get('license', None),
-            metamodel_version=data.get('metamodelVersion', None),
-            recommended_package_id=data.get('recommendedPackageId', None),
-            readme=data.get('readme', None),
+            template_id=tmp_id,
+            organization_id=org_id,
+            version=version,
+            name=data.get('name', ''),
+            description=data.get('description', ''),
+            template_license=data.get('license', ''),
+            metamodel_version=data.get('metamodelVersion', ''),
+            recommended_package_id=data.get('recommendedPackageId', ''),
+            readme=data.get('readme', ''),
         )
         for ap_data in data.get('allowedPackages', []):
             template.allowed_packages.append(PackageFilter.load(ap_data))
