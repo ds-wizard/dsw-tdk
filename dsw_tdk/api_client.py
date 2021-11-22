@@ -146,7 +146,6 @@ class DSWAPIClient:
     @handle_client_errors
     async def get_templates(self) -> List[Template]:
         body = await self._get_json('/templates/all')
-        print(body)
         return list(map(_load_remote_template, body))
 
     @handle_client_errors
