@@ -193,15 +193,26 @@ class Template:
 
     @classmethod
     def _common_load(cls, data):
-        org_id, tmp_id, version = data.get('id', '?:?:0.0.0').split(':')
+        if 'id' in data.keys():
+            composite_id = data['id']  # type: str
+            if composite_id.count(':') != 2:
+                raise RuntimeError(f'Invalid template ID: {composite_id}')
+            org_id, tmp_id, version = composite_id.split(':')
+        else:
+            try:
+                org_id = data['organizationId']
+                tmp_id = data['templateId']
+                version = data['version']
+            except KeyError:
+                raise RuntimeError('Cannot retrieve template ID')
         template = Template(
             template_id=tmp_id,
             organization_id=org_id,
             version=version,
-            name=data.get('name', ''),
+            name=data.get('name', 'Uknown template'),
             description=data.get('description', ''),
-            template_license=data.get('license', ''),
-            metamodel_version=data.get('metamodelVersion', ''),
+            template_license=data.get('license', 'nolicense'),
+            metamodel_version=data.get('metamodelVersion', METAMODEL_VERSION),
             recommended_package_id=data.get('recommendedPackageId', ''),
             readme=data.get('readme', ''),
         )
@@ -325,7 +336,7 @@ class TemplateProject:
         return pathspec.PathSpec.from_lines(PATHSPEC_FACTORY, patterns)
 
     def list_files(self) -> List[pathlib.Path]:
-        files = (pathlib.Path(p) for p in self.files_pathspec.match_tree_files(self.template_dir))
+        files = (pathlib.Path(p) for p in self.files_pathspec.match_tree_files(str(self.template_dir)))
         if self.used_readme is not None:
             return list(p for p in files if p != self.used_readme.relative_to(self.template_dir))
         return list(files)
