@@ -7,11 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.7.0]
+
+### Changed
+
+- Updated with template metamodel 7
+- Updated several dependencies
+
 ## [3.6.0]
 
 ### Changed
 
-- Updated with template metamodel 5
+- Updated with template metamodel 6
 - Updated several dependencies
 
 ## [3.5.2]
