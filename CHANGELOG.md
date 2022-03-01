@@ -141,7 +141,7 @@ Initial DSW Template Development Kit (versioned as part of the [DSW platform](ht
 - `verify` for checking template metadata
 - `package` for creating an importable ZIP package from local project
 
-[Unreleased]: /../../compare/master...develop
+[Unreleased]: /../../compare/main...develop
 [2.8.0]: /../../tree/v2.8.0
 [2.8.1]: /../../tree/v2.8.1
 [2.9.0]: /../../tree/v2.9.0
