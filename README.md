@@ -102,7 +102,7 @@ $ dsw-tdk --debug list
 
 ## Requirements
 
--  [Python 3.6+](https://www.python.org/downloads/)
+-  [Python 3.7+](https://www.python.org/downloads/)
 -  DSW instance with matching version (e.g. a local one using [Docker](https://github.com/ds-wizard/dsw-deployment-example))
 -  Admin credentials (email+password) to the DSW instance
 
