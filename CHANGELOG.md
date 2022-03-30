@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.10.0]
+
+### Changed
+
+- Updated with template metamodel 9
+- Dropped support of Python 3.6 and started with 3.10
+
 ## [3.9.0]
 
 Released for version consistency with other DSW tools.
