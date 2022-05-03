@@ -47,8 +47,8 @@ jobs:
 # (1) -> Build Docker image
     - name: Docker build
       run: |
-        docker pull $PUBLIC_IMAGE:$TAG_DEVELOP
-        docker build --cache-from $PUBLIC_IMAGE:$TAG_DEVELOP -t ${PRIVATE_IMAGE#/}:$GITHUB_SHA .
+        docker pull $PUBLIC_IMAGE:$TAG_LATEST
+        docker build --cache-from $PUBLIC_IMAGE:$TAG_LATEST -t ${PRIVATE_IMAGE#/}:$GITHUB_SHA .
 
 # (2) -> Docker image tagging
     - name: Docker login (private)
@@ -79,12 +79,6 @@ jobs:
         GITHUB_BRANCH=`echo $GITHUB_REF | cut -d/ -f3- | sed 's#/#-#g'`
         docker image tag $PRIVATE_IMAGE:$GITHUB_SHA $PRIVATE_IMAGE:$GITHUB_BRANCH
         docker push $PRIVATE_IMAGE:$GITHUB_BRANCH
-
-    - name: Docker tag and push - develop (public)
-      if: github.event_name == 'push' && github.ref == 'refs/heads/develop' && env.PRIVATE_REGISTRY_URL != '' && env.DOCKER_HUB_USERNAME != ''
-      run: |
-        docker image tag $PRIVATE_IMAGE:$GITHUB_SHA $PUBLIC_IMAGE:$TAG_DEVELOP
-        docker push $PUBLIC_IMAGE:$TAG_DEVELOP
 
     - name: Docker tag and push - latest (public)
       if: github.event_name == 'push' && github.ref == 'refs/heads/main' && env.PRIVATE_REGISTRY_URL != '' && env.DOCKER_HUB_USERNAME != ''
