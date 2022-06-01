@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+
+## [3.12.0]
+
+### Changed
+
+- Updated with template metamodel 10
+- Check file and asset ID on delete
+
 ## [3.11.0]
 
 Released for version consistency with other DSW tools.
@@ -174,3 +182,10 @@ Initial DSW Template Development Kit (versioned as part of the [DSW platform](ht
 [3.5.0]: /../../tree/v3.5.0
 [3.5.1]: /../../tree/v3.5.1
 [3.5.2]: /../../tree/v3.5.2
+[3.6.0]: /../../tree/v3.6.0
+[3.7.0]: /../../tree/v3.7.0
+[3.8.0]: /../../tree/v3.8.0
+[3.9.0]: /../../tree/v3.9.0
+[3.10.0]: /../../tree/v3.10.0
+[3.11.0]: /../../tree/v3.11.0
+[3.12.0]: /../../tree/v3.12.0
