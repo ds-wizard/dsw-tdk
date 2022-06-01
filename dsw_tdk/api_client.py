@@ -229,10 +229,14 @@ class DSWAPIClient:
 
     @handle_client_errors
     async def delete_template_file(self, template_id: str, file_id: str) -> bool:
+        if file_id is None:
+            raise RuntimeWarning('Tried to delete file without ID (None)')
         return await self._delete(f'/templates/{template_id}/files/{file_id}')
 
     @handle_client_errors
     async def delete_template_asset(self, template_id: str, asset_id: str) -> bool:
+        if asset_id is None:
+            raise RuntimeWarning('Tried to delete asset without ID (None)')
         return await self._delete(f'/templates/{template_id}/assets/{asset_id}')
 
     @handle_client_errors
