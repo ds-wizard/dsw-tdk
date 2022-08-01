@@ -11,6 +11,8 @@
 
 *Template Development Kit for [Data Stewardship Wizard](https://ds-wizard.org)*
 
+:bangbang: **This project has been moved to monorepo [ds-wizard/engine-tools](https://github.com/ds-wizard/engine-tools)** :bangbang:
+
 ## Installation
 
 ### Python package
